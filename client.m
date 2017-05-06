@@ -14,18 +14,18 @@ const Client <- Class Client(Role)
 
                   (locate self)$stdout.putString["\n\n [NODE ONLINE]             CLIENT            [NODE ONLINE] \n\n"]
 
-                  loop
-                            (locate self)$stdout.putString["\n WAITING FOR PROXY \n"]
-                            exit when (proxyConnection.proxy_isCacheReady == true)
-                  end loop
+                %  loop
+                           % (locate self)$stdout.putString["\n WAITING FOR PROXY \n"]
+                           % exit when (proxyConnection.proxy_isCacheReady == true)
+                %  end loop
 
-                 (locate self)$stdout.putString["\n * * * * Cache has been successfully constructed at the node [" || (locate proxyConnection)$name || "] * * * * \n"]
+                % (locate self)$stdout.putString["\n * * * * Cache has been successfully constructed at the node [" || (locate proxyConnection)$name || "] * * * * \n"]
 
-                 self.createCache            
+                % self.createCache            
 
   end process
 
-  export operation startRole 
+  export operation startRole[flag: String]
          activated <- true
   end startRole
 

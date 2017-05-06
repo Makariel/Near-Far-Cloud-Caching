@@ -15,13 +15,11 @@ const DataCenter <- Class DataCenter(Role)
 
                  (locate self)$stdout.putString["\n\n [NODE ONLINE]             DATA CENTER            [NODE ONLINE] \n\n"]
 
-                 self.createCache
-
-                 
+                % self.createCache
                 
      end process
 
-     export operation startRole 
+     export operation startRole[flag: String]
             activated <- true
      end startRole
 

@@ -6,11 +6,9 @@ export operation experiments_memoryCap
             var randomDigit: Integer <- 1
             var integerCounter: Integer <- 0
 
-            const out <- OutStream.toUnix["memoryCap.dat", "w"]
+            
 
             loop
-
-                    % exit when (maxIntegers >= 163000)
 
                      var integers: Array.of[Integer] <- Array.of[Integer].create[0]
                      const preTime <- (locate self).getTimeOfDay
@@ -40,7 +38,7 @@ export operation experiments_memoryCap
                      end for
 
                      var outputString: String <- (maxIntegers*4).asString || " " || processedTimeString || "\n"
-                     out.putString[outputString]
+   
                      (locate self)$stdout.putString[outputString]
                    
                      maxIntegers <- maxIntegers + 1000
@@ -48,70 +46,22 @@ export operation experiments_memoryCap
 
             end loop
 
-            out.close
+
           
   end experiments_memoryCap
 
-
-  export operation experiments_transmitBytes[location: Node]
-
-  		 var amountIntegers: Integer <- 10
-  		 const out <- OutStream.toUnix["byteTransmission.dat", "w"]
-
-  		 loop
-
-  		 			 var payload: Array.of[Integer] <- Array.of[Integer].create[0]
-         			 	
-			         var counter: Integer <- 1
-
-			         loop
-			                   exit when counter > amountIntegers
-			                   payload.addUpper[counter]
-			                   counter <- counter + 1
-			         end loop
-
-			         var amountBytes: Integer <- amountIntegers * 4        
-			    	 	
-			         const preMove <- (locate self).getTimeOfDay
-
-			         move payload to location
-
-			         const postMove <- (locate self).getTimeOfDay
-			         const moveTime <- postMove - preMove
-
-			         var timeString: String <- moveTime.asString
-			         var processedTimeString: String <- ""
-
-			         for c in timeString
-			                   if (c = ':') then processedTimeString <- processedTimeString || "."
-			                   else processedTimeString <- processedTimeString || c.asString 
-			                   end if
-			         end for
-
-			         var s: String <- amountBytes.asString || " " || processedTimeString || "\n"
-			         out.putString[s]
-			      
-			         payload <- NIL
-
-			         amountIntegers <- amountIntegers + 10
-
-	    end loop   
-
-	    out.close   
-
-  end experiments_transmitBytes
 
 
   export operation experiments_generateGraph
 
   				 var size: Integer <- 500
   				 const MAX_CHILDREN <- 5
-  				 const MAX_SIZE <- 10000
-  				% const out <- OutStream.toUnix["generateGraph.dat", "w"]
+  				 const MAX_SIZE <- 6000
+  				 const out <- OutStream.toUnix["experiments_generateGraph.dat", "w"]
 
   				 loop
 
-		  				% exit when size > MAX_SIZE
+		  				 exit when size > MAX_SIZE
 
 		  	             const preGenerate <- (locate self).getTimeOfDay
 
@@ -134,7 +84,7 @@ export operation experiments_memoryCap
 		                 var s: String <- graphSize.asString || " " || processedTimeString || "\n"
 		                 
 		                 (locate self)$stdout.putString[s]
-		               %  out.putString[s]
+		                 out.putString[s]
 
 		                 s <- NIL
 		                 newGraph <- NIL
@@ -144,17 +94,23 @@ export operation experiments_memoryCap
 
   				 end loop
 
+  				 out.close
+
+
   end experiments_generateGraph
 
   export operation experiments_DFS_hitspeed
+
+  				 (locate self)$stdout.putString["\n\n - - - - - - Experiment: DFS Hit Speed has been started at node [" || (locate self)$name || "] - - - - - - \n\n"]	
 
 
   		         var size: Integer <- 6000
   				 const MAX_CHILDREN <- 5
   				 var amountCalls: Integer <- 0
   				 var totalTime: Time <- Time.create[0,0]
-  				 
-  				const out <- OutStream.toUnix["DFS_hitspeed_1000_washington.dat", "w"]
+  				
+  				 var nodeName: String <- (locate self)$name 
+  				 const out <- OutStream.toUnix["experiments_DFSHitSpeed_" || nodeName, "w"]
 
 		                 var newGraph: Graph <- Graph.create 
 		                 newGraph <- newGraph.graph_generateGraph[size, MAX_CHILDREN]
@@ -204,13 +160,13 @@ export operation experiments_memoryCap
 
                  var size: Integer <- 500
   				 const MAX_CHILDREN <- 5
-  				 const MAX_SIZE <- 8000
+  				 const MAX_SIZE <- 6000
   				
-  				 const out <- OutStream.toUnix["transmitGraph.dat", "w"]
+  				 const out <- OutStream.toUnix["experiments_transmitGraph.dat", "w"]
 
   				 loop
 
-		  				 exit when size >= MAX_SIZE
+		  				 exit when size > MAX_SIZE
 
 		                 var newGraph: Graph <- Graph.create 
 		                 newGraph <- newGraph.graph_generateGraph[size, MAX_CHILDREN]
@@ -219,6 +175,8 @@ export operation experiments_memoryCap
 		                 const preTransmission <- (locate self).getTimeOfDay
 
 		                 move newGraph to location
+
+		                 (locate self)$stdout.putString["\nGraph of size [" || graphSize.asString || "] has been moved to the node [" || location$name || "]\n"]
 
 		                 const postTransmission <- (locate self).getTimeOfDay
 		                 const transmissionTime <- postTransmission - preTransmission
@@ -235,7 +193,7 @@ export operation experiments_memoryCap
 		                 var s: String <- graphSize.asString || " " || processedTimeString || "\n"
 		                 
 		                 (locate self)$stdout.putString[s]
-		                 % out.putString[s]
+		                 out.putString[s]
 
 		                 s <- NIL
 		                 newGraph <- NIL
