@@ -327,6 +327,7 @@ export operation graph_partialExpansion[originalVertex: Vertex] -> [ret: Vertex]
 
                                                            var newEdge:Edge <- Edge.create[expandedVertex, newVertex]
                                                            expandedVertex.vertex_addPath[newEdge]
+                                                           expandedVertex.vertex_incrementTotalChildren
                                             end for 
                                             
                                             ret <- expandedVertex  

@@ -1,6 +1,7 @@
 const Client <- Class Client(Role)
 
   var activated: Boolean <- false
+  var flagType: String
   var proxyConnection: Proxy <- NIL
   var proxyLocation: Node <- NIL
   var localCache: Cache <- NIL
@@ -14,26 +15,28 @@ const Client <- Class Client(Role)
 
                   (locate self)$stdout.putString["\n\n [NODE ONLINE]             CLIENT            [NODE ONLINE] \n\n"]
 
-                %  loop
-                           % (locate self)$stdout.putString["\n WAITING FOR PROXY \n"]
-                           % exit when (proxyConnection.proxy_isCacheReady == true)
-                %  end loop
+                  loop
+                            (locate self)$stdout.putString["\n [Proxy is currently building its cache: Patience is a virtue] \n"]
+                            exit when (proxyConnection.proxy_isCacheReady == true)
+                  end loop
 
-                % (locate self)$stdout.putString["\n * * * * Cache has been successfully constructed at the node [" || (locate proxyConnection)$name || "] * * * * \n"]
+                 (locate self)$stdout.putString["\n * * * * Cache has been successfully constructed at the node [" || (locate proxyConnection)$name || "] * * * * \n"]
 
-                % self.createCache            
+                 self.createCache[25]            
 
   end process
 
   export operation startRole[flag: String]
          activated <- true
+         flagType <- flag
   end startRole
 
-  export operation createCache
+  export operation createCache[size: Integer]
 
          var clientCachingAlgorithm: CacheAlgorithm <- DFSCaching.create
-         localCache <- Cache.create[25, clientCachingAlgorithm, proxyConnection]
+         localCache <- Cache.create[size, clientCachingAlgorithm, proxyConnection]
          localCache.cache_commenceCaching
+
          localCache.cache_getData.graph_resetRecursionVariables       
          var proxyCounter: Integer <- proxyConnection.proxy_getProxyInvocations
          var dataCenterCounter: Integer <- proxyConnection.proxy_getDataCenterInvocations
@@ -72,6 +75,7 @@ const Proxy <- Class Proxy(Role)
     var clientLocation: Node <- NIL
     var serverLocation: Node <- NIL
     var localCache: Cache <- NIL
+    var flagType: String 
 
     var dataCenterInvocations: Integer <- 0
     var proxyInvocations: Integer <- 0
@@ -86,24 +90,31 @@ const Proxy <- Class Proxy(Role)
 
                   (locate self)$stdout.putString["\n\n [NODE ONLINE]             PROXY            [NODE ONLINE] \n\n"]
 
-                 % loop
-                     %     (locate self)$stdout.putString["\n WAITING FOR DATA CENTER \n"]
-                     %      exit when (serverConnection.server_isCacheReady == true)
-                %  end loop
-                %  (locate self)$stdout.putString["\n * * * * Cache has been successfully constructed at the node [" || (locate serverConnection)$name || "] * * * * \n"]
+                  if(flagType = "CS") then
+                  	       self.createCache[5000]
+                  else 
 
- 
-                 % self.createCache   
+                  loop
+                           (locate self)$stdout.putString["\n [Data Center is currently building its cache: Patience is a virtue] \n"]
+                           exit when (serverConnection.server_isCacheReady == true)
+                  end loop
+
+                  (locate self)$stdout.putString["\n * * * * Cache has been successfully constructed at the node [" || (locate serverConnection)$name || "] * * * * \n"]
+
+                  self.createCache[2500]
+
+                  end if
                  
   end process 
 
   export operation startRole[flag: String] 
          activated <- true
+         flagType <- flag
   end startRole
 
-  export operation createCache
+  export operation createCache[size: Integer]
          var proxyCachingAlgorithm: CacheAlgorithm <- DFSCaching.create
-         localCache <- Cache.create[250, proxyCachingAlgorithm, serverConnection] % was 6000
+         localCache <- Cache.create[size, proxyCachingAlgorithm, serverConnection] 
          cacheReady <- true
   end createCache
 
@@ -119,10 +130,9 @@ const Proxy <- Class Proxy(Role)
   export operation expandVertex[location: Node, targetVertex: Vertex, mode: String] -> [ret: Vertex]
 
            if(targetVertex == NIL) then 
-              assert false
+           	       (locate self)$stdout.putString["\n |||NIL DETECTED @ targetVertex||| \n"]
+                   assert false
            end if
-
-           proxyInvocations <- proxyInvocations + 1  
 
            var identifiedVertex: Vertex <- localCache.cache_getData.graph_recursiveDFS[localCache.cache_getData.graph_getRoot, targetVertex.vertex_getID, "DFS", NIL, NIL] 
 
@@ -130,13 +140,33 @@ const Proxy <- Class Proxy(Role)
 
            if(identifiedVertex == NIL or identifiedVertex.vertex_getID = -666) then
  
+ 							   (locate self)$stdout.putString["\n * * * * Client cache has outgrown that of Proxy cache * * * * \n"]
                                assert false  
                              
            else
-                             var newVertex: Vertex <- localCache.cache_getData.graph_expandVertex[identifiedVertex, "FULL"]
+                             
 
-                            
-                             if(newVertex == NIL)
+                         	 if(flagType = "CS") then
+
+                         	 	  dataCenterInvocations <- dataCenterInvocations + 1
+
+                         	 	  var newVertex: Vertex <- localCache.cache_getData.graph_expandVertex[identifiedVertex, "PARTIAL"]
+
+                         	 	  if(newVertex == NIL) then 
+                         	 	  	 ret <- NIL
+                         	 	  	 return
+                         	 	  else 
+                         	 	  	     move newVertex to location
+                                         ret <- newVertex  
+                         	 	  end if
+
+
+                         	 else 
+
+                         	 	   proxyInvocations <- proxyInvocations + 1  
+                                   var newVertex:Vertex <- localCache.cache_getData.graph_expandVertex[identifiedVertex, "FULL"]
+
+                              	   if(newVertex == NIL)
 
                                 then       
                                  
@@ -166,11 +196,14 @@ const Proxy <- Class Proxy(Role)
                                      end if                                 
                             else 
 
-                                 
-                                  move newVertex to location
-                                  ret <- newVertex             
+                                   move newVertex to location
+                                   ret <- newVertex          
                             
-                            end if  
+                            end if  	
+
+                        end if
+
+                                       
                     end if
                   
   end expandVertex
@@ -198,6 +231,7 @@ const DataCenter <- Class DataCenter(Role)
 
     var activated: Boolean <- false
     var cacheReady: Boolean <- false
+    var flagType: String
     var output: OutStream <- NIL
     var localCache: Cache <- NIL
     var proxyConnection: Proxy
@@ -210,18 +244,19 @@ const DataCenter <- Class DataCenter(Role)
 
                  (locate self)$stdout.putString["\n\n [NODE ONLINE]             DATA CENTER            [NODE ONLINE] \n\n"]
 
-                % self.createCache
+                 self.createCache[5000]
                 
      end process
 
      export operation startRole[flag: String]
             activated <- true
+            flagType <- flag
      end startRole
 
-     export operation createCache 
+     export operation createCache[size: Integer]
 
             var datacenterCachingAlgorithm: CacheAlgorithm <- DFSCaching.create
-            localCache <- Cache.create[5000, datacenterCachingAlgorithm, NIL]
+            localCache <- Cache.create[size, datacenterCachingAlgorithm, NIL]
             cacheReady <- true
             localCache.cache_getData.graph_resetRecursionVariables
             
@@ -621,6 +656,7 @@ export operation graph_partialExpansion[originalVertex: Vertex] -> [ret: Vertex]
 
                                                            var newEdge:Edge <- Edge.create[expandedVertex, newVertex]
                                                            expandedVertex.vertex_addPath[newEdge]
+                                                           expandedVertex.vertex_incrementTotalChildren
                                             end for 
                                             
                                             ret <- expandedVertex  
@@ -696,7 +732,7 @@ const Role <- class Role
       export operation startRole[flag: String]
       end startRole
 
-      export operation createCache
+      export operation createCache[size: Integer]
       end createCache
 
       export operation setPointer[pointer: Role]
@@ -719,8 +755,7 @@ const Run <- object Run
 
        self.run_executeShell
 
-    
-	         
+     
 	end process
 
 
@@ -762,27 +797,31 @@ const Run <- object Run
 
   export operation run_memoryCapExperiment
 
-  (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Memory Capacity [Starting]  - - - \n\n"]
+  (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Memory Capacity [Starting]  - - - - \n\n"]
 
   var memoryCapacityExperiment: Experiments <- Experiments.create
   memoryCapacityExperiment.experiments_memoryCap
 
+   (locate self)$stdout.putString["\n - - - - [Finished] Experiment: Generate Graph [Finished]  - - - - \n\n"]
 
   end run_memoryCapExperiment
 
   export operation run_generateGraphExperiment
 
-  (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Generate Graph [Starting]  - - - \n\n"]
+  (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Generate Graph [Starting]  - - - - \n\n"]
 
     var generateGraphExperiment: Experiments <- Experiments.create
     generateGraphExperiment.experiments_generateGraph
+
+
+     (locate self)$stdout.putString["\n - - - - [Finished] Experiment: Generate Graph [Finished]  - - - - \n\n"]
 
 
   end run_generateGraphExperiment
 
   export operation run_transmitGraphExperiment
 
-   (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Transmit Graph [Starting]  - - - \n\n"]
+   (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Transmit Graph [Starting]  - - - - \n\n"]
 
       var c: Role <- NIL
       var dc: Role <- NIL 
@@ -802,6 +841,8 @@ const Run <- object Run
              var transmitGraphExperiment: Experiments <- Experiments.create
              transmitGraphExperiment.experiments_transmitGraph[clientLocation]
 
+   (locate self)$stdout.putString["\n - - - - [Finished] Experiment: Generate Graph [Finished]  - - - - \n\n"]
+
 
   end run_transmitGraphExperiment
 
@@ -812,7 +853,7 @@ const Run <- object Run
 
   export operation run_dfsHitSpeedExperiment
 
-      (locate self)$stdout.putString["\n - - - - [Starting] Experiment: DFS Hit Speed [Starting]  - - - \n\n"]
+      (locate self)$stdout.putString["\n - - - - [Starting] Experiment: DFS Hit Speed [Starting]  - - - - \n\n"]
 
 
       var there: Node
@@ -843,6 +884,9 @@ const Run <- object Run
 
       var dfsHitSpeedExperiment: Experiments <- Experiments.create
       dfsHitSpeedExperiment.experiments_DFS_hitspeed
+
+
+            (locate self)$stdout.putString["\n - - - - [Finished] Experiment: DFS Hit Speed [Finished]  - - - - \n\n"]
            
 
   end run_dfsHitSpeedExperiment
@@ -850,74 +894,69 @@ const Run <- object Run
 
   export operation run_clientServerCaching
 
-      (locate self)$stdout.putString["\n - - - - [Starting] Caching: Client-Server [Starting]  - - - \n\n"]
+          (locate self)$stdout.putString["\n - - - - [Starting] Caching: Client-Server [Starting]  - - - - \n\n"]
 
-      var p: Role <- NIL 
-      var c: Role <- NIL
-      var dc: Role <- NIL 
+          var p: Role <- NIL 
+          var c: Role <- NIL
 
-      var there: Node
-      var all: NodeList <- (locate self).getActiveNodes
-      var maxNodes: Integer <- (all.upperBound + 1)  
- 
-      p <- Proxy.create
-      c <- Client.create
-      dc <- DataCenter.create
-      
-     for index: Integer <- 1 while (index < maxNodes) by index <- index + 1  
-                there <- all[index]$theNode                                    
-     end for
-           
-             fix c at all[1]$theNode
-             fix p at all[2]$theNode
-                                
-             dc.startRole["Caching: Client-Server"]
-             p.setPointer[dc]
-             p.startRole["Caching: Client-Server"]
-             c.setPointer[p]
-             c.startRole["Caching: Client-Server"]
+          var there: Node
+          var all: NodeList <- (locate self).getActiveNodes
+          var maxNodes: Integer <- (all.upperBound + 1)  
+          
+          p <- Proxy.create
+          c <- Client.create
+          
+         for index: Integer <- 1 while (index < maxNodes) by index <- index + 1  
+                    there <- all[index]$theNode                                    
+         end for
+               
+                 fix c at all[1]$theNode
+                 fix p at all[2]$theNode
+                                    
+                
+                 p.startRole["CS"]
+                 c.setPointer[p]
+                 c.startRole["CS"]
 
-           loop
-                              
-           end loop
-
-
+               loop
+                                    
+               end loop
 
   end run_clientServerCaching
 
 
   export operation run_nearFarCloudCaching
 
-      (locate self)$stdout.putString["\n - - - - [Starting] Caching: Near-Far Cloud [Starting]  - - - \n\n"]
+          (locate self)$stdout.putString["\n - - - - [Starting] Caching: Near-Far Cloud [Starting]  - - - - \n\n"]
 
-      var p: Role <- NIL 
-      var c: Role <- NIL
-      var dc: Role <- NIL 
+          var p: Role <- NIL 
+          var c: Role <- NIL
+          var dc: Role <- NIL 
 
-      var there: Node
-      var all: NodeList <- (locate self).getActiveNodes
-      var maxNodes: Integer <- (all.upperBound + 1)  
- 
-      p <- Proxy.create
-      c <- Client.create
-      dc <- DataCenter.create
-      
-     for index: Integer <- 1 while (index < maxNodes) by index <- index + 1  
-                there <- all[index]$theNode                                    
-     end for
-           
-             fix c at all[1]$theNode
-             fix p at all[2]$theNode
-                                
-             dc.startRole["Caching: Client-Server"]
-             p.setPointer[dc]
-             p.startRole["Caching: Client-Server"]
-             c.setPointer[p]
-             c.startRole["Caching: Client-Server"]
+          var there: Node
+          var all: NodeList <- (locate self).getActiveNodes
+          var maxNodes: Integer <- (all.upperBound + 1)  
+     
+          p <- Proxy.create
+          c <- Client.create
+          dc <- DataCenter.create
+          
+         for index: Integer <- 1 while (index < maxNodes) by index <- index + 1  
+                    there <- all[index]$theNode                                    
+         end for
+               
+                 fix c at all[1]$theNode
+                 fix p at all[2]$theNode
+                                    
+                 dc.startRole["NFC"]
+                 p.setPointer[dc]
+                 p.startRole["NFC"]
+                 c.setPointer[p]
+                 c.startRole["NFC"]
 
-           loop
-                              
-           end loop
+               loop
+                                  
+               end loop
 
 
   end run_nearFarCloudCaching
@@ -927,16 +966,16 @@ const Run <- object Run
 
    export operation run_printMenu
 
-    (locate self)$stdout.putString["\n                    |M E N U|                    \n"]
-    (locate self)$stdout.putString["---------------------------------------------------------------\n"]
-    (locate self)$stdout.putString[" [1]         |Print Menu| \n"]
-    (locate self)$stdout.putString[" [2]         |Experiments: Memory Capacity| \n"]
-    (locate self)$stdout.putString[" [3]         |Experiments: Generate Graph| \n"]
-    (locate self)$stdout.putString[" [4]         |Experiments: Transmit Graph| \n"]
-    (locate self)$stdout.putString[" [5]         |Experiments: DFS hit speed| \n"]
-    (locate self)$stdout.putString[" [6]         |Caching: Client-Server| \n"]
-    (locate self)$stdout.putString[" [7]         |Caching: Near-Far Cloud| \n"]
-    (locate self)$stdout.putString["---------------------------------------------------------------\n"]
+      (locate self)$stdout.putString["\n                    |M E N U|                    \n"]
+      (locate self)$stdout.putString["---------------------------------------------------------------\n"]
+      (locate self)$stdout.putString[" [1]         |Print Menu| \n"]
+      (locate self)$stdout.putString[" [2]         |Experiments: Memory Capacity| \n"]
+      (locate self)$stdout.putString[" [3]         |Experiments: Generate Graph| \n"]
+      (locate self)$stdout.putString[" [4]         |Experiments: Transmit Graph| \n"]
+      (locate self)$stdout.putString[" [5]         |Experiments: DFS hit speed| \n"]
+      (locate self)$stdout.putString[" [6]         |Caching: Client-Server| \n"]
+      (locate self)$stdout.putString[" [7]         |Caching: Near-Far Cloud| \n"]
+      (locate self)$stdout.putString["---------------------------------------------------------------\n"]
 
    end run_printMenu
 
@@ -1270,17 +1309,24 @@ const DFSCaching <- Class DFSCaching
                              root.vertex_edgesToArray
             end if
 
+            % Cache miss: the vertex is a leaf!
+
             if(root.vertex_getAmountEdges < 1) 
                                                     then   
+
+                    % Consult next level cache, request expansion of the given vertex 
 
                     var expandedVertex: Vertex <- fromCache.cache_getNextLevelCache.expandVertex[(locate self), root, NIL]
                                                    
                     if(expandedVertex == NIL)
                                                     then
-                                            
+                                            				% Expansion has failed
+
                                                             fromCache.cache_incrementMisses
                                                             return                                                                                                                                                           
-                    else              
+                    else          
+
+                    	 % Expansion is successful    
                                                       
                          var expandedSize: Integer <- expandedVertex.vertex_getTotalChildren
 
@@ -1309,19 +1355,13 @@ const DFSCaching <- Class DFSCaching
                                   end if
                          end for
 
-                         processedTimeString <- processedTimeString.getSlice[1, processedTimeString.length-1] 
+                         processedTimeString <- processedTimeString.getSlice[1, processedTimeString.length-1]                   
+                         var output: String <-  fromCache.cache_getData.graph_getSize.asString  || " " || processedTimeString.asString  || "\n"
 
-                          var p: Proxy <- view fromCache.cache_getNextLevelCache as Proxy
-                          var proxyInvocations: Integer <- p.proxy_getDataCenterInvocations
-                   
-                         var output: String <-  fromCache.cache_getData.graph_getSize.asString  || " " || proxyInvocations.asString  || "\n"
-
-                         % processedTimeString.asString
-                         % proxyInvocations.asString
-                         % processedTimeString.asString
-
-                         out.putString[output]     	                 	                       
+                         out.putString[output]    
                          (locate self)$stdout.putString[output]
+
+                         % Start caching from the current vertex parent 
 
                          self.cacheData[root.vertex_getParent]
 

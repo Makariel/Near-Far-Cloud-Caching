@@ -1,6 +1,7 @@
 const Client <- Class Client(Role)
 
   var activated: Boolean <- false
+  var flagType: String
   var proxyConnection: Proxy <- NIL
   var proxyLocation: Node <- NIL
   var localCache: Cache <- NIL
@@ -14,26 +15,28 @@ const Client <- Class Client(Role)
 
                   (locate self)$stdout.putString["\n\n [NODE ONLINE]             CLIENT            [NODE ONLINE] \n\n"]
 
-                %  loop
-                           % (locate self)$stdout.putString["\n WAITING FOR PROXY \n"]
-                           % exit when (proxyConnection.proxy_isCacheReady == true)
-                %  end loop
+                  loop
+                            (locate self)$stdout.putString["\n [Proxy is currently building its cache: Patience is a virtue] \n"]
+                            exit when (proxyConnection.proxy_isCacheReady == true)
+                  end loop
 
-                % (locate self)$stdout.putString["\n * * * * Cache has been successfully constructed at the node [" || (locate proxyConnection)$name || "] * * * * \n"]
+                 (locate self)$stdout.putString["\n * * * * Cache has been successfully constructed at the node [" || (locate proxyConnection)$name || "] * * * * \n"]
 
-                % self.createCache            
+                 self.createCache[25]            
 
   end process
 
   export operation startRole[flag: String]
          activated <- true
+         flagType <- flag
   end startRole
 
-  export operation createCache
+  export operation createCache[size: Integer]
 
          var clientCachingAlgorithm: CacheAlgorithm <- DFSCaching.create
-         localCache <- Cache.create[25, clientCachingAlgorithm, proxyConnection]
+         localCache <- Cache.create[size, clientCachingAlgorithm, proxyConnection]
          localCache.cache_commenceCaching
+
          localCache.cache_getData.graph_resetRecursionVariables       
          var proxyCounter: Integer <- proxyConnection.proxy_getProxyInvocations
          var dataCenterCounter: Integer <- proxyConnection.proxy_getDataCenterInvocations

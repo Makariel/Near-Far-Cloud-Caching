@@ -5,7 +5,7 @@ const Role <- class Role
       export operation startRole[flag: String]
       end startRole
 
-      export operation createCache
+      export operation createCache[size: Integer]
       end createCache
 
       export operation setPointer[pointer: Role]
@@ -70,27 +70,31 @@ const Run <- object Run
 
   export operation run_memoryCapExperiment
 
-  (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Memory Capacity [Starting]  - - - \n\n"]
+  (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Memory Capacity [Starting]  - - - - \n\n"]
 
   var memoryCapacityExperiment: Experiments <- Experiments.create
   memoryCapacityExperiment.experiments_memoryCap
 
+   (locate self)$stdout.putString["\n - - - - [Finished] Experiment: Generate Graph [Finished]  - - - - \n\n"]
 
   end run_memoryCapExperiment
 
   export operation run_generateGraphExperiment
 
-  (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Generate Graph [Starting]  - - - \n\n"]
+  (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Generate Graph [Starting]  - - - - \n\n"]
 
     var generateGraphExperiment: Experiments <- Experiments.create
     generateGraphExperiment.experiments_generateGraph
+
+
+     (locate self)$stdout.putString["\n - - - - [Finished] Experiment: Generate Graph [Finished]  - - - - \n\n"]
 
 
   end run_generateGraphExperiment
 
   export operation run_transmitGraphExperiment
 
-   (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Transmit Graph [Starting]  - - - \n\n"]
+   (locate self)$stdout.putString["\n - - - - [Starting] Experiment: Transmit Graph [Starting]  - - - - \n\n"]
 
       var c: Role <- NIL
       var dc: Role <- NIL 
@@ -110,6 +114,8 @@ const Run <- object Run
              var transmitGraphExperiment: Experiments <- Experiments.create
              transmitGraphExperiment.experiments_transmitGraph[clientLocation]
 
+   (locate self)$stdout.putString["\n - - - - [Finished] Experiment: Generate Graph [Finished]  - - - - \n\n"]
+
 
   end run_transmitGraphExperiment
 
@@ -120,7 +126,7 @@ const Run <- object Run
 
   export operation run_dfsHitSpeedExperiment
 
-      (locate self)$stdout.putString["\n - - - - [Starting] Experiment: DFS Hit Speed [Starting]  - - - \n\n"]
+      (locate self)$stdout.putString["\n - - - - [Starting] Experiment: DFS Hit Speed [Starting]  - - - - \n\n"]
 
 
       var there: Node
@@ -151,6 +157,9 @@ const Run <- object Run
 
       var dfsHitSpeedExperiment: Experiments <- Experiments.create
       dfsHitSpeedExperiment.experiments_DFS_hitspeed
+
+
+            (locate self)$stdout.putString["\n - - - - [Finished] Experiment: DFS Hit Speed [Finished]  - - - - \n\n"]
            
 
   end run_dfsHitSpeedExperiment
@@ -158,74 +167,69 @@ const Run <- object Run
 
   export operation run_clientServerCaching
 
-      (locate self)$stdout.putString["\n - - - - [Starting] Caching: Client-Server [Starting]  - - - \n\n"]
+          (locate self)$stdout.putString["\n - - - - [Starting] Caching: Client-Server [Starting]  - - - - \n\n"]
 
-      var p: Role <- NIL 
-      var c: Role <- NIL
-      var dc: Role <- NIL 
+          var p: Role <- NIL 
+          var c: Role <- NIL
 
-      var there: Node
-      var all: NodeList <- (locate self).getActiveNodes
-      var maxNodes: Integer <- (all.upperBound + 1)  
- 
-      p <- Proxy.create
-      c <- Client.create
-      dc <- DataCenter.create
-      
-     for index: Integer <- 1 while (index < maxNodes) by index <- index + 1  
-                there <- all[index]$theNode                                    
-     end for
-           
-             fix c at all[1]$theNode
-             fix p at all[2]$theNode
-                                
-             dc.startRole["Caching: Client-Server"]
-             p.setPointer[dc]
-             p.startRole["Caching: Client-Server"]
-             c.setPointer[p]
-             c.startRole["Caching: Client-Server"]
+          var there: Node
+          var all: NodeList <- (locate self).getActiveNodes
+          var maxNodes: Integer <- (all.upperBound + 1)  
+          
+          p <- Proxy.create
+          c <- Client.create
+          
+         for index: Integer <- 1 while (index < maxNodes) by index <- index + 1  
+                    there <- all[index]$theNode                                    
+         end for
+               
+                 fix c at all[1]$theNode
+                 fix p at all[2]$theNode
+                                    
+                
+                 p.startRole["CS"]
+                 c.setPointer[p]
+                 c.startRole["CS"]
 
-           loop
-                              
-           end loop
-
-
+               loop
+                                    
+               end loop
 
   end run_clientServerCaching
 
 
   export operation run_nearFarCloudCaching
 
-      (locate self)$stdout.putString["\n - - - - [Starting] Caching: Near-Far Cloud [Starting]  - - - \n\n"]
+          (locate self)$stdout.putString["\n - - - - [Starting] Caching: Near-Far Cloud [Starting]  - - - - \n\n"]
 
-      var p: Role <- NIL 
-      var c: Role <- NIL
-      var dc: Role <- NIL 
+          var p: Role <- NIL 
+          var c: Role <- NIL
+          var dc: Role <- NIL 
 
-      var there: Node
-      var all: NodeList <- (locate self).getActiveNodes
-      var maxNodes: Integer <- (all.upperBound + 1)  
- 
-      p <- Proxy.create
-      c <- Client.create
-      dc <- DataCenter.create
-      
-     for index: Integer <- 1 while (index < maxNodes) by index <- index + 1  
-                there <- all[index]$theNode                                    
-     end for
-           
-             fix c at all[1]$theNode
-             fix p at all[2]$theNode
-                                
-             dc.startRole["Caching: Client-Server"]
-             p.setPointer[dc]
-             p.startRole["Caching: Client-Server"]
-             c.setPointer[p]
-             c.startRole["Caching: Client-Server"]
+          var there: Node
+          var all: NodeList <- (locate self).getActiveNodes
+          var maxNodes: Integer <- (all.upperBound + 1)  
+     
+          p <- Proxy.create
+          c <- Client.create
+          dc <- DataCenter.create
+          
+         for index: Integer <- 1 while (index < maxNodes) by index <- index + 1  
+                    there <- all[index]$theNode                                    
+         end for
+               
+                 fix c at all[1]$theNode
+                 fix p at all[2]$theNode
+                                    
+                 dc.startRole["NFC"]
+                 p.setPointer[dc]
+                 p.startRole["NFC"]
+                 c.setPointer[p]
+                 c.startRole["NFC"]
 
-           loop
-                              
-           end loop
+               loop
+                                  
+               end loop
 
 
   end run_nearFarCloudCaching
@@ -235,16 +239,16 @@ const Run <- object Run
 
    export operation run_printMenu
 
-    (locate self)$stdout.putString["\n                    |M E N U|                    \n"]
-    (locate self)$stdout.putString["---------------------------------------------------------------\n"]
-    (locate self)$stdout.putString[" [1]         |Print Menu| \n"]
-    (locate self)$stdout.putString[" [2]         |Experiments: Memory Capacity| \n"]
-    (locate self)$stdout.putString[" [3]         |Experiments: Generate Graph| \n"]
-    (locate self)$stdout.putString[" [4]         |Experiments: Transmit Graph| \n"]
-    (locate self)$stdout.putString[" [5]         |Experiments: DFS hit speed| \n"]
-    (locate self)$stdout.putString[" [6]         |Caching: Client-Server| \n"]
-    (locate self)$stdout.putString[" [7]         |Caching: Near-Far Cloud| \n"]
-    (locate self)$stdout.putString["---------------------------------------------------------------\n"]
+      (locate self)$stdout.putString["\n                    |M E N U|                    \n"]
+      (locate self)$stdout.putString["---------------------------------------------------------------\n"]
+      (locate self)$stdout.putString[" [1]         |Print Menu| \n"]
+      (locate self)$stdout.putString[" [2]         |Experiments: Memory Capacity| \n"]
+      (locate self)$stdout.putString[" [3]         |Experiments: Generate Graph| \n"]
+      (locate self)$stdout.putString[" [4]         |Experiments: Transmit Graph| \n"]
+      (locate self)$stdout.putString[" [5]         |Experiments: DFS hit speed| \n"]
+      (locate self)$stdout.putString[" [6]         |Caching: Client-Server| \n"]
+      (locate self)$stdout.putString[" [7]         |Caching: Near-Far Cloud| \n"]
+      (locate self)$stdout.putString["---------------------------------------------------------------\n"]
 
    end run_printMenu
 

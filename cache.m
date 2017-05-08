@@ -38,17 +38,24 @@ const DFSCaching <- Class DFSCaching
                              root.vertex_edgesToArray
             end if
 
+            % Cache miss: the vertex is a leaf!
+
             if(root.vertex_getAmountEdges < 1) 
                                                     then   
+
+                    % Consult next level cache, request expansion of the given vertex 
 
                     var expandedVertex: Vertex <- fromCache.cache_getNextLevelCache.expandVertex[(locate self), root, NIL]
                                                    
                     if(expandedVertex == NIL)
                                                     then
-                                            
+                                            				% Expansion has failed
+
                                                             fromCache.cache_incrementMisses
                                                             return                                                                                                                                                           
-                    else              
+                    else          
+
+                    	 % Expansion is successful    
                                                       
                          var expandedSize: Integer <- expandedVertex.vertex_getTotalChildren
 
@@ -77,19 +84,13 @@ const DFSCaching <- Class DFSCaching
                                   end if
                          end for
 
-                         processedTimeString <- processedTimeString.getSlice[1, processedTimeString.length-1] 
+                         processedTimeString <- processedTimeString.getSlice[1, processedTimeString.length-1]                   
+                         var output: String <-  fromCache.cache_getData.graph_getSize.asString  || " " || processedTimeString.asString  || "\n"
 
-                          var p: Proxy <- view fromCache.cache_getNextLevelCache as Proxy
-                          var proxyInvocations: Integer <- p.proxy_getDataCenterInvocations
-                   
-                         var output: String <-  fromCache.cache_getData.graph_getSize.asString  || " " || proxyInvocations.asString  || "\n"
-
-                         % processedTimeString.asString
-                         % proxyInvocations.asString
-                         % processedTimeString.asString
-
-                         out.putString[output]     	                 	                       
+                         out.putString[output]    
                          (locate self)$stdout.putString[output]
+
+                         % Start caching from the current vertex parent 
 
                          self.cacheData[root.vertex_getParent]
 

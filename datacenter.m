@@ -3,6 +3,7 @@ const DataCenter <- Class DataCenter(Role)
 
     var activated: Boolean <- false
     var cacheReady: Boolean <- false
+    var flagType: String
     var output: OutStream <- NIL
     var localCache: Cache <- NIL
     var proxyConnection: Proxy
@@ -15,18 +16,19 @@ const DataCenter <- Class DataCenter(Role)
 
                  (locate self)$stdout.putString["\n\n [NODE ONLINE]             DATA CENTER            [NODE ONLINE] \n\n"]
 
-                % self.createCache
+                 self.createCache[5000]
                 
      end process
 
      export operation startRole[flag: String]
             activated <- true
+            flagType <- flag
      end startRole
 
-     export operation createCache 
+     export operation createCache[size: Integer]
 
             var datacenterCachingAlgorithm: CacheAlgorithm <- DFSCaching.create
-            localCache <- Cache.create[5000, datacenterCachingAlgorithm, NIL]
+            localCache <- Cache.create[size, datacenterCachingAlgorithm, NIL]
             cacheReady <- true
             localCache.cache_getData.graph_resetRecursionVariables
             
